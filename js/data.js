@@ -13,7 +13,7 @@ const ALL_GAMES = [
 // 복수형 단어: "These are ..." 로 말한다 (기획서 4-4장)
 const PLURAL_IDS = new Set([
   'grapes', 'chopsticks', 'beans', 'jeans', 'shorts', 'socks', 'sneakers',
-  'boots', 'clothes', 'glasses', 'gloves', 'balletshoes',
+  'boots', 'clothes', 'glasses', 'gloves', 'balletshoes', 'cherries',
 ]);
 
 // 관사(a/an)를 붙이지 않는 단어: 색깔("This is red.")과 셀 수 없는 말("This is milk.")
@@ -37,7 +37,7 @@ A.THEMES = [
     mission: FOOD_MISSION,
     words: [
       ['apple', 'apple', '사과'], ['banana', 'banana', '바나나'], ['tangerine', 'tangerine', '귤'], ['grapes', 'grapes', '포도'], ['strawberry', 'strawberry', '딸기'],
-      ['watermelon', 'watermelon', '수박'], ['pineapple', 'pineapple', '파인애플'], ['lemon', 'lemon', '레몬'], ['cherries', 'cherry', '체리'], ['peach', 'peach', '복숭아'],
+      ['watermelon', 'watermelon', '수박'], ['pineapple', 'pineapple', '파인애플'], ['lemon', 'lemon', '레몬'], ['cherries', 'cherries', '체리'], ['peach', 'peach', '복숭아'],
       ['pear', 'pear', '배'], ['kiwi', 'kiwi', '키위'], ['mango', 'mango', '망고'], ['coconut', 'coconut', '코코넛'], ['avocado', 'avocado', '아보카도'],
       ['tomato', 'tomato', '토마토'], ['olive', 'olive', '올리브'], ['chestnut', 'chestnut', '밤'],
       ['melon', 'melon', '멜론'], ['blueberry', 'blueberry', '블루베리'],
