@@ -17,12 +17,12 @@ A.CONFIG = {
     image: 'images/elephant.webp',
     imageAlt: '잠든 코끼리',
     title: '오늘은 여기까지!',
-    sub: '내일 또 만나요 · See you tomorrow! Good night!',
+    sub: '내일 또 만나요<br>See you tomorrow! Good night!',
     speech: 'See you tomorrow! Good night!',
     unlockSpeech: 'Welcome back!',
   },
   // 하루 놀이 시간 (분)
-  playMinutes: { default: 15, test: 1, more: 15 },
+  playMinutes: { default: 15, more: 15 },
   // 보상 규칙 (기획서 6장): 게임 1회 별 1~3개, 별 10개마다 스티커 1장
   rewards: { maxStars: 3, starsPerSticker: 10 },
   // 모든 주제를 끝냈을 때 받는 특별 스티커

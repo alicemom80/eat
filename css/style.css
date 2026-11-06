@@ -46,7 +46,7 @@ html, body { margin: 0; height: 100%; color: var(--ink);
 .theme .emoji { font-size: 86px; }
 .tname { font-size: 26px; } .ten { font-size: 17px; opacity: .75; } .tstars { font-size: 19px; }
 .theme.soon { filter: grayscale(.8); opacity: .55; }
-.dinfo { font-size: clamp(16px, 4.6vw, 20px); margin-top: 6px; }
+.dinfo { font-size: clamp(16px, 4.6vw, 20px); margin-top: 6px; word-break: keep-all; text-wrap: balance; }
 .sub { text-align: center; color: var(--sub); font-size: 22px; }
 
 /* 묶음 */
@@ -93,7 +93,7 @@ html, body { margin: 0; height: 100%; color: var(--ink);
 .choices.n4 { grid-template-columns: 1fr 1fr; }
 .choice { height: 24vh; min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 .choices.n3.scratchgrid { grid-template-columns: 1fr; }
-.choice .pic { flex: 1 1 0; height: 0; width: 100%; min-height: 0; } .lbl { font-size: 22px; }
+.choice .pic { flex: 1 1 0; height: 0; width: 100%; min-height: 0; } .lbl { font-size: 22px; white-space: nowrap; }
 
 /* 풍선 */
 .sky { position: relative; flex: 1; min-height: 60vh; border-radius: 28px; background: linear-gradient(#8fd8ff, #d9f4ff); overflow: hidden; }
@@ -116,6 +116,9 @@ html, body { margin: 0; height: 100%; color: var(--ink);
 .face.front { background: var(--card); transform: rotateY(180deg); }
 .mcard.flip .back { transform: rotateY(180deg); } .mcard.flip .front { transform: rotateY(0); }
 .mcard.done { opacity: .55; }
+.mcard .face.front { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; }
+.mcard .face.front .pic { flex: 1 1 0; height: 0; width: 100%; min-height: 0; }
+.mcard .lbl { font-size: 15px; line-height: 1.2; white-space: nowrap; max-width: 100%; }
 
 /* 오엑스 / 묻고답하기 */
 .oxpic { background: var(--card); border: 4px solid var(--line); border-radius: 28px; padding: 12px; text-align: center; }
@@ -123,9 +126,9 @@ html, body { margin: 0; height: 100%; color: var(--ink);
 .oxrow { display: flex; gap: 14px; }
 .ox { flex: 1; height: 110px; font-size: 77px; color: #fff; }
 .ox.o { background: #3fbf6a; border-color: #2a9a50; } .ox.x { background: #ee5a5a; border-color: #c93e3e; }
-.bubble { background: #fff; color: #3b2f2f; border: 4px solid var(--line); border-radius: 28px; padding: 12px; text-align: center; font-size: 36px; }
+.bubble { background: #fff; color: #3b2f2f; border: 4px solid var(--line); border-radius: 28px; padding: 12px; text-align: center; font-size: 36px; white-space: nowrap; }
 .answers { display: flex; flex-direction: column; gap: 12px; }
-.answer { font-size: 31px; min-height: 76px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.answer { font-size: 31px; min-height: 76px; display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; }
 
 /* 복권 */
 .scard { position: relative; height: 22vh; min-height: 130px; background: var(--card); border: 4px solid var(--line); border-radius: 24px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: var(--shadow); overflow: hidden; }
@@ -221,8 +224,9 @@ html, body { margin: 0; height: 100%; color: var(--ink);
 .pmodal { position: fixed; inset: 0; z-index: 40; background: rgba(30, 42, 74, .6); display: grid; place-items: center; padding: 16px; }
 .ppanel { width: min(100%, 420px); background: var(--card); color: var(--ink); border-radius: 26px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
 .ppanel h3 { margin: 0; font-weight: 400; font-size: 30px; }
-.pleft { font-size: 19px; color: var(--sub); }
+.pleft { font-size: clamp(15px, 4.4vw, 19px); color: var(--sub); white-space: nowrap; }
 .prow { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 21px; border-top: 2px solid rgba(0, 0, 0, .1); padding-top: 10px; }
+.prow > span:first-child { white-space: nowrap; }
 .pctrls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .ppanel button { font: inherit; font-size: 19px; color: var(--ink); background: rgba(150, 120, 60, .18); border: 0; border-radius: 16px; padding: 8px 14px; white-space: nowrap; }
 .ppanel button.on { background: #3fbf6a; color: #fff; } .ppanel button.danger { background: #ff6b6b; color: #fff; }

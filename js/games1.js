@@ -26,7 +26,10 @@
         prev.disabled = i === 0;
         prev.onclick = () => { i--; draw(); };
         next.onclick = () => {
-          if (i === ctx.words.length - 1) return ctx.finish(ctx.words.length, ctx.words.length);
+          if (i === ctx.words.length - 1) {
+            ctx.progress(ctx.words.length, ctx.words.length);   // 끝 화면 전에 진행바를 100%로
+            return ctx.finish(ctx.words.length, ctx.words.length);
+          }
           i++; draw();
         };
         nav.append(prev, next);
@@ -92,6 +95,7 @@
             if (popped) return;
             if (c.id !== w.id) return api.bad(ball);
             popped = true;
+            A.sfx('pop');
             balloons.forEach(x => x.anim?.pause());
             ball.classList.add('pop');
             api.ok();
@@ -119,7 +123,7 @@
       ctx.progress(0, pairs);
       A.target = null;
       deck.forEach(d => {
-        const c = el('button', 'btn mcard', `<div class="face back">?</div><div class="face front">${img(d.w)}</div>`);
+        const c = el('button', 'btn mcard', `<div class="face back">?</div><div class="face front">${img(d.w)}<span class="lbl" lang="en">${d.w.en}</span></div>`);
         c.onclick = () => {
           if (busy || c.classList.contains('flip') || c.classList.contains('done')) return;
           c.classList.add('flip');

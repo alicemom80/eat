@@ -66,7 +66,16 @@
     node?.classList.add('reading');
   };
   const unlight = (id) => { if (lit && lit.id === id) light(null); };
-  A.speak = (input, queue = false) => {
+  // 효과음이 나는 동안 시작하는 말은 효과음이 끝날 때까지 기다린다 (소리가 겹쳐 말이 안 들리지 않게)
+  let sfxEnd = 0;      // 효과음이 끝나는 시각 (ms)
+  let held = null;     // 기다리는 말 [입력, queue] 목록
+  const flushHeld = () => {
+    if (sfxEnd > Date.now()) { setTimeout(flushHeld, sfxEnd - Date.now()); return; }
+    const list = held;
+    held = null;
+    list.forEach(([input, queue]) => A.speak(input, queue));
+  };
+  const sayNow = (input, queue = false) => {
     if (!('speechSynthesis' in window) || !input) return;
     const parts = (Array.isArray(input) ? input : [input]).map(p => (typeof p === 'string' ? { text: p } : p)).filter(p => p.text);
     if (!parts.length) return;
@@ -117,6 +126,17 @@
       }
     } catch (e) { /* 소리 실패해도 놀이는 계속 */ }
   };
+  A.speak = (input, queue = false) => {
+    if (!('speechSynthesis' in window) || !input) return;
+    if (held || sfxEnd > Date.now()) {
+      const wasIdle = !held;
+      held = held || [];
+      held.push([input, queue]);
+      if (wasIdle) setTimeout(flushHeld, Math.max(0, sfxEnd - Date.now()));
+      return;
+    }
+    sayNow(input, queue);
+  };
   A.say = (w, queue = false) => A.speak(w.say, queue);
   // 문장 만들기: 단수는 "This is an apple.", 복수(w.plural)는 "These are jeans." 식으로 쓴다
   // 관사가 비어 있는 단어(w.art === '': 색깔, 셀 수 없는 말)는 관사 없이 "This is red." 로 쓴다
@@ -127,7 +147,33 @@
   A.itLine = (w, name) => (w.plural ? `They are ${name}.` : `It's ${withArt(w, name)}.`);
   A.whatLine = (w) => (w.plural ? 'What are these?' : 'What is this?');
 
-  /* ---------- 효과음: 파일 없이 브라우저가 직접 만든다 (WebAudio) ---------- */
+  /* ---------- 효과음: sounds/ 의 mp3를 미리 불러 두고, 못 쓰면 WebAudio 음(tone)으로 대신한다 ---------- */
+  const SFX = {
+    ok: { file: 'correct', ms: 620 },        // 띠리링 (정답)
+    bad: { file: 'try-again', ms: 530 },     // 다시 해봐요 (오답)
+    flip: { file: 'tap', ms: 80 },           // 카드 뒤집기
+    pop: { file: 'pop', ms: 120 },           // 풍선 터지기
+    sparkle: { file: 'sparkle', ms: 900 },   // 스티커 받기
+    win: { file: 'win', ms: 1190 },          // 한 판 끝
+  };
+  const SFX_VOLUME = 0.65;   // 영어 읽는 소리보다 크지 않게
+  const SFX_COPIES = 3;      // 같은 소리를 겹쳐 낼 수 있는 개수
+  const sfxPool = {};        // 파일 이름 → { items: [Audio], next, broken }
+  const loadSfx = (file) => {
+    const pool = { items: [], next: 0, broken: false };
+    sfxPool[file] = pool;
+    try {
+      for (let k = 0; k < SFX_COPIES; k++) {
+        const a = new Audio(`sounds/${file}.mp3`);
+        a.preload = 'auto';
+        a.volume = SFX_VOLUME;
+        a.onerror = () => { pool.broken = true; };   // 파일이 없으면 tone 으로
+        pool.items.push(a);
+      }
+    } catch (e) { pool.broken = true; }
+  };
+  Object.values(SFX).forEach(s => loadSfx(s.file));   // 앱을 열 때 미리 불러 둔다
+
   let audio = null;
   const tone = (freq, start, len, type = 'sine', vol = 0.18) => {
     if (!audio) return;
@@ -140,14 +186,39 @@
     o.connect(g).connect(audio.destination);
     o.start(t0); o.stop(t0 + len + 0.05);
   };
-  A.sfx = (kind) => {
+  const TONES = {
+    ok: () => { tone(784, 0, 0.18); tone(988, 0.1, 0.18); tone(1319, 0.2, 0.3); },   // 띠리링
+    bad: () => { tone(330, 0, 0.16, 'triangle', 0.2); tone(262, 0.14, 0.26, 'triangle', 0.2); },   // 뿅
+    flip: () => tone(660, 0, 0.08, 'triangle', 0.12),
+    pop: () => tone(880, 0, 0.06, 'sine', 0.15),
+    sparkle: () => { tone(1047, 0, 0.1); tone(1319, 0.08, 0.1); tone(1568, 0.16, 0.2); },
+    win: () => { tone(784, 0, 0.16); tone(988, 0.12, 0.16); tone(1319, 0.24, 0.16); tone(1568, 0.36, 0.4); },
+  };
+  const playTone = (kind) => {
     try {
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       if (audio.state === 'suspended') audio.resume();
-      if (kind === 'ok') { tone(784, 0, 0.18); tone(988, 0.1, 0.18); tone(1319, 0.2, 0.3); }   // 띠리링
-      else if (kind === 'bad') { tone(330, 0, 0.16, 'triangle', 0.2); tone(262, 0.14, 0.26, 'triangle', 0.2); }   // 뿅
-      else if (kind === 'flip') tone(660, 0, 0.08, 'triangle', 0.12);
+      TONES[kind]?.();
     } catch (e) { /* 소리 못 내는 기기는 그냥 넘어간다 */ }
+  };
+  // 파일 재생: 자동재생이 막히거나 파일을 못 읽으면 tone 으로 (false 를 돌려주면 호출한 쪽이 tone 을 낸다)
+  const playFile = (file, onFail) => {
+    const pool = sfxPool[file];
+    if (!pool || pool.broken) return false;
+    const a = pool.items[pool.next];
+    pool.next = (pool.next + 1) % pool.items.length;
+    try {
+      a.currentTime = 0;
+      const p = a.play();
+      if (p && p.catch) p.catch(onFail);
+    } catch (e) { return false; }
+    return true;
+  };
+  A.sfx = (kind) => {
+    const s = SFX[kind];
+    if (!s) return;
+    sfxEnd = Math.max(sfxEnd, Date.now() + s.ms);   // 이 시간 동안 말을 기다리게 한다
+    if (!playFile(s.file, () => playTone(kind))) playTone(kind);
   };
 
   /* ---------- 영어 칭찬·격려 ---------- */
@@ -195,8 +266,8 @@
 
   /* ---------- 긴 영어 단어: 칸을 넘치면 그 칸만 글자를 줄인다 (짧은 단어는 그대로) ----------
      CSS 는 nowrap 으로 두 줄 꺾임을 막고, 여기서는 넘치는 칸만 글자 크기를 맞춘다. */
-  const FIT_SELECTOR = '.chip span, .word-en, .btn.sentence';
-  const FIT_MIN_PX = 6;      // 이보다 더 줄이지 않는다
+  const FIT_SELECTOR = '.chip span, .word-en, .btn.sentence, .btn.answer span, .bubble:not(.sm), .choice .lbl, .scard .lbl, .mcard .lbl';
+  const FIT_MIN_PX = 10;     // 이보다 더 줄이지 않는다
   const FIT_MARGIN = 0.97;   // 딱 맞으면 반올림 때문에 다시 넘칠 수 있어서 3% 여유를 둔다
   const fitOne = (el) => {
     el.style.fontSize = '';  // 먼저 CSS가 정한 기본 크기로 되돌린다
@@ -250,10 +321,34 @@
   };
 
   /* ---------- 칭찬 이펙트 ---------- */
+  // 색종이: canvas-confetti (libs/confetti.js, ISC). 파일이 없거나 '동작 줄이기' 설정이면 이모지만 나온다.
+  // 색종이 캔버스는 말풍선·이모지(z-index 98~99)보다 아래(97)에 깔리고, 터치는 통과한다(pointer-events: none).
+  const CONFETTI_Z = 97;
+  const CONFETTI_COLORS = ['#FFD93D', '#FF6B6B', '#6BCB77', '#4D96FF', '#C77DFF'];
+  const CONFETTI_Y = 0.4;          // 화면 가운데 약간 위에서 터뜨린다
+  const CONFETTI_FIRST = 70;       // 첫 시도 정답: 한 번에 70개 이하
+  const CONFETTI_AGAIN = 25;       // 두 번째 이후 정답
+  const END_TICKS = 72;            // 입자가 약 1.2초(60fps 기준) 안에 사라진다
+  const pour = (opts) => {
+    if (typeof confetti !== 'function') return;   // 라이브러리가 없으면 이모지만
+    try {
+      confetti({ zIndex: CONFETTI_Z, colors: CONFETTI_COLORS, disableForReducedMotion: true, ...opts });
+    } catch (e) { /* 색종이가 실패해도 놀이는 계속 */ }
+  };
   A.burst = (first) => {
     const b = A.el('div', 'burst', first ? '⭐' : '👍');
     document.body.append(b);
     setTimeout(() => b.remove(), 650);
+    pour({ particleCount: first ? CONFETTI_FIRST : CONFETTI_AGAIN, spread: first ? 75 : 60, origin: { x: 0.5, y: CONFETTI_Y } });
+  };
+  // 한 판을 끝냈을 때: 별 모양을 가운데서 크게, 양쪽 아래에서 작게 (합쳐서 50개)
+  // withSticker: 스티커를 받았으면 소리는 sparkle 하나로 바꾸고, 작은 색종이(20개)를 함께 터뜨린다 (합쳐서 70개)
+  A.celebrateEnd = (withSticker) => {
+    A.sfx(withSticker ? 'sparkle' : 'win');
+    pour({ shapes: ['star'], particleCount: 30, scalar: 1.4, spread: 120, ticks: END_TICKS, origin: { x: 0.5, y: 0.45 } });
+    pour({ particleCount: 10, angle: 60, spread: 55, ticks: END_TICKS, origin: { x: 0, y: 0.8 } });
+    pour({ particleCount: 10, angle: 120, spread: 55, ticks: END_TICKS, origin: { x: 1, y: 0.8 } });
+    if (withSticker) pour({ shapes: ['star', 'circle'], particleCount: 20, scalar: 0.9, spread: 70, ticks: END_TICKS, origin: { x: 0.5, y: 0.6 } });
   };
   const PRAISE_GAP_MS = 700;   // 칭찬 말이 끝나고 다음 단어 소리가 이어서 나온다
   A.shake = (node) => {
@@ -284,7 +379,10 @@
     let i = 0, stars = 0;
     let afterPraise = false;
     const next = () => {
-      if (i >= order.length) return ctx.finish(stars, order.length);
+      if (i >= order.length) {
+        ctx.progress(order.length, order.length);   // 끝 화면 전에 진행바를 100%로
+        return ctx.finish(stars, order.length);
+      }
       const queue = afterPraise;
       afterPraise = false;
       const w = order[i];
@@ -300,15 +398,19 @@
           locked = true;
           if (!tried) stars++;
           A.burst(!tried);
-          A.cheer(!tried);
+          A.cheer(!tried, !waitSpeech);   // 말이 긴 놀이(묻고 답하기)는 칭찬 소리가 보기 소리를 자르지 않게 뺀다
           afterPraise = true;
           i++;
           setTimeout(() => (waitSpeech ? whenSpeechDone(next) : next()), Math.max(delay, PRAISE_GAP_MS));
         },
-        bad(node) {
+        // quiet: 격려 목소리를 빼고 효과음·말풍선만 낸다 (묻고 답하기: 방금 누른 보기 문장을 끊지 않게)
+        // readFirst: 효과음 뒤에 먼저 읽을 문장 (그 뒤에 문제 문장을 이어서 읽는다)
+        bad(node, quiet = false, readFirst = null) {
+          if (locked) return;   // 정답을 이미 맞힌 뒤의 누르기는 무시
           tried = true;
           if (node) A.shake(node);
-          A.oops();
+          A.oops(!quiet);
+          if (readFirst) A.speak(readFirst);
           if (textFn) A.speak(textFn(w), true); else A.say(w, true);
         },
       };

@@ -154,7 +154,7 @@
       row('놀이 시간', btn(`${MORE_MINUTES}분 더 놀기`, () => { addTime(MORE_MINUTES); toast(`${MORE_MINUTES}분 더 놀 수 있어요`); renderMenu(); })),
       row('시간 제한',
         btn(`${DEFAULT_LIMIT_MIN}분`, () => { update({ limitMin: DEFAULT_LIMIT_MIN }); renderMenu(); }, state.limitMin === DEFAULT_LIMIT_MIN ? 'on' : '')),
-      row('진행 기록 지우기', btn(resetArmed ? '한 번 더 누르면 지워져요' : '지우기', () => {
+      row('진행 기록 지우기', btn(resetArmed ? '한 번 더 누르기' : '지우기', () => {
         if (!resetArmed) { resetArmed = true; renderMenu(); return; }
         A.resetStars();
         A.stickers.reset();

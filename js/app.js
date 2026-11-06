@@ -13,9 +13,6 @@
     A.$('#bg').style.backgroundImage = name ? `url(images/bg/${name}.webp)` : 'none';
   };
 
-  // 좁은 칸에서 긴 영어 단어가 어색하게 끊기지 않도록, 끊어도 되는 자리(소프트 하이픈)를 표시한다
-  const BREAK_AT = /(fish|fly|pillar|hopper|pecker|bird|saurus|saurolophus|raptor|ceratops|nodon|tooth|dile)$/;
-  const breakable = (en) => (en.length > 8 && !en.includes(' ') ? en.replace(BREAK_AT, '­$1') : en);
 
   A.setBg = setBg;
 
@@ -79,7 +76,7 @@
     setBg(t.id);
     const page = el('div', 'page');
     page.append(A.topbar(`${t.icon} ${t.ko} 친구들 ${gi + 1}<small>${t.en} Friends ${gi + 1}</small>`, () => A.themePage(t), false));
-    const words = el('div', 'wordstrip', g.map(w => `<button class="chip">${img(w)}<span lang="en">${breakable(w.en)}</span></button>`).join(''));
+    const words = el('div', 'wordstrip', g.map(w => `<button class="chip">${img(w)}<span lang="en">${w.en}</span></button>`).join(''));
     words.querySelectorAll('.chip').forEach((c, i) => { c.onclick = () => A.say(g[i]); });
     page.append(words);
     const list = el('div', 'games');
@@ -144,6 +141,7 @@
         menu.onclick = goBack;
         const row = el('div', 'nav'); row.append(again, menu);
         stage.replaceChildren(done, row);
+        A.celebrateEnd(rewards.length > 0);
         A.speak(rewards.length ? A.stickers.rewardSpeech(rewards[0]) : 'Good job!');
       },
     };
