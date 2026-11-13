@@ -1,6 +1,6 @@
 {
-  "name": "먹고입어요",
-  "short_name": "먹고입어요",
+  "name": "먹고 입기 영어놀이",
+  "short_name": "먹고 입기 영어놀이",
   "description": "매일 먹고 입는 것을 영어로 듣고, 보고, 골라 보는 유아 영어 단어 놀이",
   "start_url": "./index.html",
   "scope": "./",
