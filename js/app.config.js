@@ -4,7 +4,7 @@ window.A = window.A || {};
 
 A.CONFIG = {
   // 화면에 보이는 앱 이름
-  title: { ko: '먹고 입기 영어놀이', en: 'Eat & Wear', icon: '🍎' },
+  title: { ko: '먹고 입기', sub: '영어 놀이', en: 'Eat & Wear', icon: '🍎' },
   // 기기에 저장하는 값의 이름표. 앱마다 달라야 서로 섞이지 않는다
   storagePrefix: 'eat-wear',
   // 시작 화면 (주인공은 기준그림 코끼리)
@@ -34,5 +34,5 @@ A.CONFIG = {
   },
 };
 
-A.logoHtml = () => `${A.CONFIG.title.icon} ${A.CONFIG.title.ko} <small>${A.CONFIG.title.en}</small>`;
+A.logoHtml = (withSub) => `${A.CONFIG.title.icon} ${A.CONFIG.title.ko}${withSub && A.CONFIG.title.sub ? `<br>${A.CONFIG.title.sub}` : ''} <small>${A.CONFIG.title.en}</small>`;
 A.storageKey = (name) => `${A.CONFIG.storagePrefix}-${name}-v1`;
