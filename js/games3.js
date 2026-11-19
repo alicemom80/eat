@@ -26,6 +26,15 @@
     }
     return cells;
   }
+  // 동물 3마리를 모두 막다른 길 끝에 놓을 수 있는 미로가 나올 때까지 다시 만든다.
+  // (5x5 같은 작은 미로는 막다른 길이 모자랄 때가 있어서, 그냥 두면 동물이 길 한가운데 놓여 길을 막는다)
+  const MAZE_TRIES = 200;
+  const countDeadEnds = (cells) => cells.filter((c, k) => k !== 0 && c.filter(wall => !wall).length === 1).length;
+  function makeMazeWithEnds(N, count) {
+    let cells = makeMaze(N);
+    for (let i = 1; i < MAZE_TRIES && countDeadEnds(cells) < count; i++) cells = makeMaze(N);
+    return cells;
+  }
   // src 칸에서 각 칸까지 걸어가야 하는 걸음 수
   function distancesFrom(cells, N, src) {
     const dist = Array(N * N).fill(-1);
@@ -96,7 +105,7 @@
       const spoken = new Map();   // 동물 id → 지금 화면의 [{text, node}] (말풍선이 읽을 때 번쩍이게)
       const askText = (w) => spoken.get(w.id) || [];
       A.rounds(ctx, (w, api) => {
-        const cells = makeMaze(N);
+        const cells = makeMazeWithEnds(N, 3);
         const far = farthestCells(cells, N, 3);
         const picks = A.choices(w, ctx, 3);
         const items = new Map(far.map((cell, k) => [cell, picks[k]]));
