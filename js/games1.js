@@ -10,16 +10,17 @@
       const draw = () => {
         const w = ctx.words[i];
         seen.add(i);
-        A.target = w;
+        A.target = null; A.targetText = A.bothParts(w);   // 위쪽 🔊도 영어+한글로 다시 들려준다
         ctx.progress(i, ctx.words.length);
         const card = el('div', 'bigcard');
         card.innerHTML = `${img(w, 'hero')}
           <div class="word-en">${w.en}</div>
           <div class="word-ko">${w.ko}</div>
           <button class="btn sentence">🔊 ${A.isLine(w, w.en)}</button>`;
-        card.querySelector('.hero').onclick = () => A.say(w);
+        card.querySelector('.hero').onclick = () => A.sayBoth(w);
         card.querySelector('.sentence').onclick = () => A.speak(A.isLine(w, w.say));
-        card.querySelector('.word-en').onclick = () => A.say(w);
+        card.querySelector('.word-en').onclick = () => A.sayBoth(w);
+        card.querySelector('.word-ko').onclick = () => A.sayBoth(w);
         const nav = el('div', 'nav');
         const prev = el('button', 'btn big', '◀');
         const next = el('button', 'btn big primary', i === ctx.words.length - 1 ? '끝! ⭐' : '▶');
@@ -34,7 +35,7 @@
         };
         nav.append(prev, next);
         ctx.stage.replaceChildren(card, nav);
-        A.say(w);   // 카드가 나오면 소리가 바로 나온다
+        A.sayBoth(w);   // 카드가 나오면 영어와 한글 소리가 바로 나온다
       };
       draw();
     },

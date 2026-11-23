@@ -37,8 +37,11 @@
 
   /* ---------- 소리: 기기 내장 음성(speechSynthesis) ---------- */
   let voice = null;
+  let koVoice = null;   // 한국어 음성 (한글 단어 읽기용)
   const pickVoice = () => {
     if (!('speechSynthesis' in window)) return;
+    const koVs = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+    koVoice = koVs.find(v => v.localService !== false) || koVs[0] || null;
     // 폰 안에 내려받아 둔 음성만 쓴다 (이름만 있는 네트워크 음성은 소리가 안 날 수 있다)
     const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang) && v.localService !== false);
     voice = vs.find(v => /en-US/i.test(v.lang) && /(female|samantha|google us|zira|aria|jenny)/i.test(v.name))
@@ -51,6 +54,7 @@
   // 소리 재생은 이 함수 한 곳만 거친다 (나중에 mp3 파일로 바꾸기 쉽게)
   // text: 문장 하나, 또는 [{text, node}] 목록. 목록은 한 줄씩 차례로 읽으며, 읽는 동안 그 node에 'reading' 효과를 준다.
   // queue=true 이면 하던 말이 끝난 뒤에 이어서 말한다
+  const RATE_KO = 0.85;         // 한글 단어
   const RATE_WORD = 0.75;       // 단어 하나는 조금만 느리게
   const RATE_SENTENCE = 0.65;   // 문장(대사)은 더 천천히
   const NO_START_MS = 1200;     // 읽기 시작 신호가 이만큼 안 오면 글자 수로 어림해서 효과를 준다
@@ -88,10 +92,12 @@
       const sayAll = (useVoice) => {
         parts.forEach((part, k) => {
           const u = new SpeechSynthesisUtterance(part.text);
-          u.lang = 'en-US';
-          u.rate = rateOf(part.text);
+          const isKo = part.lang === 'ko-KR';   // {text, lang:'ko-KR'} 이면 한국어로 읽는다
+          u.lang = isKo ? 'ko-KR' : 'en-US';
+          u.rate = isKo ? RATE_KO : rateOf(part.text);
           u.pitch = 1.1;
-          if (useVoice && voice) u.voice = voice;
+          const pick = isKo ? koVoice : voice;
+          if (useVoice && pick) u.voice = pick;
           u.onstart = () => { started = true; if (part.node) light(part.node, ids[k]); };
           if (part.node) u.onend = u.onerror = () => unlight(ids[k]);
           speechSynthesis.speak(u);
@@ -152,6 +158,9 @@
     sayNow(input, queue);
   };
   A.say = (w, queue = false) => A.speak(w.say, queue);
+  // 영어 한 번, 이어서 한글 한 번 (단어 칩·단어 카드용)
+  A.bothParts = (w) => [{ text: w.say }, { text: w.ko, lang: 'ko-KR' }];
+  A.sayBoth = (w, queue = false) => A.speak(A.bothParts(w), queue);
   // 화면을 떠날 때: 지금 말과 기다리는 말을 모두 멈춘다 (다시 읽기도 취소)
   A.stopSpeech = () => {
     speakGen++; followers = []; startAt = 0;
